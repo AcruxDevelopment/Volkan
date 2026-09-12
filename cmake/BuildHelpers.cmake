@@ -217,7 +217,7 @@ endfunction()
 # add_lib_module(NAME [TYPE STATIC|SHARED] [OUTPUT_NAME name] [DEPENDS ...]
 #                 [EXTRA_SOURCES ...] [NO_DOCS])
 #
-# Called from a library module's own CMakeLists.txt (e.g. source/Core/CMakeLists.txt).
+# Called from a library module's own CMakeLists.txt (e.g. source/HotReload/CMakeLists.txt).
 # Sources/headers are globbed relative to that module's own directory:
 # src/*.cpp and include/*.h(pp) underneath it. TYPE picks STATIC or SHARED
 # for this module only; omit it to use the project-wide default
@@ -283,7 +283,7 @@ endmacro()
 # =============================================================================
 # add_exe_module(NAME [OUTPUT_NAME name] [DEPENDS ...] [EXTRA_SOURCES ...] [NO_DOCS])
 #
-# Called from an app module's own CMakeLists.txt (e.g. HelloApp/CMakeLists.txt).
+# Called from an app module's own CMakeLists.txt (e.g. HotReloadDemo/Host/CMakeLists.txt).
 # Sources/headers are globbed relative to that module's own directory:
 # *.cpp and include/*.h(pp) underneath it.
 # =============================================================================

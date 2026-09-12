@@ -2,9 +2,16 @@
 # Configure (if needed) and build the project, preferably with Ninja.
 #
 # Usage (from the project root):
-#   scripts/build.sh [BUILD_TYPE]
+#   scripts/build.sh [BUILD_TYPE] [extra cmake -D args...]
 #
 #   BUILD_TYPE  Debug|Release|RelWithDebInfo|MinSizeRel (default: Release)
+#
+# Anything after BUILD_TYPE is passed straight through to cmake's
+# configure step, e.g.:
+#   scripts/build.sh Debug -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON
+# CMake caches -D options across reconfigures, so passing them once and
+# then calling `scripts/build.sh` plain afterward for incremental builds
+# keeps them set -- no need to repeat them on every call.
 #
 # Set BUILD_DIR to build somewhere other than out/build (see Configuration.cmake).
 set -euo pipefail
@@ -15,6 +22,10 @@ cd "$SCRIPT_DIR/.."
 
 BUILD_DIR="${BUILD_DIR:-out/build}"
 BUILD_TYPE="${1:-Release}"
+if [ "$#" -gt 0 ]; then
+    shift
+fi
+EXTRA_CMAKE_ARGS=("$@")
 
 command -v cmake >/dev/null 2>&1 || { echo "error: cmake not found on PATH." >&2; exit 1; }
 
@@ -51,7 +62,7 @@ else
 fi
 
 echo "==> Configuring (${BUILD_TYPE}) into ${BUILD_DIR}/"
-cmake "${GENERATOR_ARGS[@]}" -S . -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}"
+cmake "${GENERATOR_ARGS[@]}" -S . -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" "${EXTRA_CMAKE_ARGS[@]}"
 
 echo "==> Building"
 cmake --build "${BUILD_DIR}"

@@ -2,16 +2,15 @@
 cmake_minimum_required(VERSION 3.25)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(
-    DemoApp
+    HotReload
     VERSION 0.1.0
-    DESCRIPTION "Demo app exercising the generator-friendly CMake module system"
+    DESCRIPTION "Cross-platform, cross-compiler C/C++ hot-reload library, plus its examples and tests"
     LANGUAGES CXX
 )
 
 # Machine-friendly identifier baked into every target as PROJECT_NAME_CODE
-# (used by BuildHelpers.cmake's _finalize_module_target). Edit this
-# alongside the project() call above when retargeting this template.
-set(PROJECT_CODE_NAME "demo")
+# (used by BuildHelpers.cmake's _finalize_module_target).
+set(PROJECT_CODE_NAME "hotreload")
 
 # All output-path configuration (out/, install/, dist/, docs/, and the
 # bin/lib subdirectory names) lives in Configuration.cmake -- included
@@ -206,7 +205,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildHelpers.cmake")
 # Third-party dependencies -- see cmake/Dependencies.cmake for
 # add_vendor_header_only / add_vendor_subdirectory / add_dependency.
 # A module declares its own dependencies in its own CMakeLists.txt (see
-# source/Core/CMakeLists.txt for an example); nothing to add here.
+# source/HotReload/CMakeLists.txt for an example); nothing to add here.
 # -------------------------------------------------------
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dependencies.cmake")
 

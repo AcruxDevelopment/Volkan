@@ -2,9 +2,17 @@
 REM Configure (if needed) and build the project, preferably with Ninja.
 REM
 REM Usage (from the project root):
-REM   scripts\build.bat [BUILD_TYPE]
+REM   scripts\build.bat [BUILD_TYPE] [extra cmake -D args...]
 REM
 REM   BUILD_TYPE  Debug^|Release^|RelWithDebInfo^|MinSizeRel (default: Release)
+REM
+REM Anything after BUILD_TYPE is passed straight through to cmake's
+REM configure step (up to 8 extra arguments -- %2 through %9, batch's own
+REM positional-parameter limit), e.g.:
+REM   scripts\build.bat Debug -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON
+REM CMake caches -D options across reconfigures, so passing them once and
+REM then calling scripts\build.bat plain afterward for incremental builds
+REM keeps them set -- no need to repeat them on every call.
 REM
 REM Set BUILD_DIR to build somewhere other than out\build (see Configuration.cmake).
 setlocal enabledelayedexpansion
@@ -15,6 +23,7 @@ if "%BUILD_DIR%"=="" set "BUILD_DIR=out\build"
 set "BUILD_TYPE=%~1"
 if "%BUILD_TYPE%"=="" set "BUILD_TYPE=Release"
 if "%TOOLCACHE_DIR%"=="" set "TOOLCACHE_DIR=.cache\tools"
+set "EXTRA_CMAKE_ARGS=%2 %3 %4 %5 %6 %7 %8 %9"
 
 where cmake >nul 2>nul
 if errorlevel 1 (
@@ -60,7 +69,7 @@ set "GENERATOR_ARGS="
 
 :configure
 echo ==^> Configuring (%BUILD_TYPE%) into %BUILD_DIR%\
-cmake %GENERATOR_ARGS% -S . -B "%BUILD_DIR%" -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
+cmake %GENERATOR_ARGS% -S . -B "%BUILD_DIR%" -DCMAKE_BUILD_TYPE=%BUILD_TYPE% %EXTRA_CMAKE_ARGS%
 if errorlevel 1 exit /b 1
 
 echo ==^> Building

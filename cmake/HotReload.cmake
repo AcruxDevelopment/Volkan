@@ -52,3 +52,31 @@ function(hot_reload_enable_patchable_functions TARGET_NAME)
 			"see HOT_RELOAD_SYMBOL_SKIPPED_TOO_SMALL in hot_reload.h.")
 	endif()
 endfunction()
+
+# Restricts TARGET's export surface to only what's explicitly marked
+# with HOT_RELOAD_EXPORT (hot_reload.h) -- the opposite of both
+# GCC/Clang's default (export every symbol with external linkage) and
+# WINDOWS_EXPORT_ALL_SYMBOLS. Narrower, not quieter: see the top-level
+# README's "Why do std::string/std::vector symbols show up as
+# PATCHED?" section for the one specific kind of noise this
+# deliberately does NOT remove, and why removing it would need
+# excluding all weak-linkage symbols by default -- which would just as
+# happily hide a hot-reloadable template of your OWN.
+#
+# What this DOES remove: your own internal helpers you never meant to
+# expose, and (on GCC/Clang, if the target statically links its C++
+# runtime) incidental runtime-library internals -- both real,
+# observed cases from building this library and its examples.
+function(hot_reload_restrict_exports TARGET_NAME)
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		target_compile_options(${TARGET_NAME} PRIVATE -fvisibility=hidden -fvisibility-inlines-hidden)
+	elseif(MSVC)
+		# MSVC already exports nothing by default -- WINDOWS_EXPORT_ALL_SYMBOLS
+		# is what opts OUT of that; simply not setting it (and not adding
+		# individual __declspec(dllexport)/HOT_RELOAD_EXPORT other than where
+		# you want them) is this function's Windows equivalent. Nothing to
+		# apply here, but calling this on every platform your target builds
+		# for, unconditionally, is still the point -- see hot_reload_enable_
+		# patchable_functions() immediately above for the same pattern.
+	endif()
+endfunction()

@@ -14,7 +14,7 @@
 #
 # Usage (from the project root):
 #   scripts/refactor.sh              # every file under source/ and c-api/
-#   scripts/refactor.sh source/Core  # just one file or directory
+#   scripts/refactor.sh source/HotReload  # just one file or directory
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

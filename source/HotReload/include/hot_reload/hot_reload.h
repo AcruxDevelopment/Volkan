@@ -90,6 +90,29 @@
 	#endif
 #endif
 
+/* Marks a single declaration for export under
+ * hot_reload_restrict_exports() (cmake/HotReload.cmake) without
+ * otherwise changing its linkage: pair with extern "C" yourself for a
+ * free function you want a stable, human-typable name for (see this
+ * file's own comment on when you'd want that) -- extern "C" first,
+ * then this macro, then the return type, e.g.
+ * `extern "C" HOT_RELOAD_EXPORT int my_function(...)`, which is the
+ * one ordering GCC/Clang accept without a warning here. Leave the
+ * extern "C" off to keep a C++ class or method's real mangled name,
+ * e.g. a virtual method a host only ever reaches through a vtable
+ * slot (see the top-level README's "Hot reloading C++ symbols"
+ * section).
+ *
+ * hot_reload_restrict_exports() is a narrower export surface, not a
+ * quieter one: see the README's "Why do std::string/std::vector
+ * symbols show up as PATCHED?" section for why it does not, and
+ * structurally cannot, suppress those specifically. */
+#ifdef _WIN32
+	#define HOT_RELOAD_EXPORT __declspec(dllexport)
+#else
+	#define HOT_RELOAD_EXPORT __attribute__((visibility("default")))
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {

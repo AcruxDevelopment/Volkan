@@ -8,8 +8,8 @@ REM Usage (from the project root):
 REM   scripts\run.bat <target-name> [-- program-args...]
 REM
 REM Examples:
-REM   scripts\run.bat hello_exe
-REM   scripts\run.bat farewell_exe -- Ale
+REM   scripts\run.bat hotreload_demo_host
+REM   scripts\run.bat hotreload_live_demo_host
 setlocal enabledelayedexpansion
 
 cd /d "%~dp0.."

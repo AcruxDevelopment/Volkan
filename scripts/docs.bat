@@ -11,7 +11,7 @@ REM place either way -- this only affects the message below).
 REM
 REM Usage (from the project root):
 REM   scripts\docs.bat              REM every module
-REM   scripts\docs.bat core_lib      REM just one module's docs (docs_<target>)
+REM   scripts\docs.bat hotreload_lib      REM just one module's docs (docs_<target>)
 setlocal
 
 cd /d "%~dp0.."

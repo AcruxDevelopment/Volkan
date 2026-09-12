@@ -8,8 +8,8 @@
 #   scripts/run.sh <target-name> [-- program-args...]
 #
 # Examples:
-#   scripts/run.sh hello_exe
-#   scripts/run.sh farewell_exe -- Ale
+#   scripts/run.sh hotreload_demo_host
+#   scripts/run.sh hotreload_live_demo_host
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

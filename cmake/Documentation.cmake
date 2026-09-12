@@ -26,7 +26,7 @@
 #   -DDOXYGEN_<ANY_DOXYFILE_TAG>=...    any Doxyfile tag can be set this way --
 #       see https://www.doxygen.nl/manual/config.html
 # A module can opt out with NO_DOCS, e.g.:
-#   add_lib_module(core_lib TYPE SHARED NO_DOCS ...)
+#   add_lib_module(hotreload_lib TYPE STATIC NO_DOCS ...)
 # =============================================================================
 
 # =============================================================================
@@ -65,7 +65,7 @@
 #   -DDOXYGEN_<ANY_DOXYFILE_TAG>=...    any Doxyfile tag can be set this way --
 #       see https://www.doxygen.nl/manual/config.html
 # A module can opt out with NO_DOCS, e.g.:
-#   add_lib_module(core_lib TYPE SHARED NO_DOCS ...)
+#   add_lib_module(hotreload_lib TYPE STATIC NO_DOCS ...)
 # =============================================================================
 
 include_guard(GLOBAL)

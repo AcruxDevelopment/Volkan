@@ -11,10 +11,10 @@ REM entire source tree the way scanning the whole repo from "." would.
 REM
 REM Usage, from the project root: scripts\refactor.bat [optional path]
 REM   scripts\refactor.bat              every file under source\ and c-api\
-REM   scripts\refactor.bat source\Core  just one file or directory -- taken
-REM                                     as given, with no exclusion filter,
-REM                                     so pick a path that doesn't overlap
-REM                                     with out\/.cache\/vendor\/.git\
+REM   scripts\refactor.bat source\HotReload  just one file or directory --
+REM                                     taken as given, with no exclusion
+REM                                     filter, so pick a path that doesn't
+REM                                     overlap with out\/.cache\/.git\
 setlocal enabledelayedexpansion
 
 cd /d "%~dp0.."

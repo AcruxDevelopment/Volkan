@@ -39,9 +39,11 @@
  *      never patched, exactly like plugin_build_marker in
  *      source/examples/HotReloadDemo.
  */
+#include "hot_reload/hot_reload.h"
+
 #include <cstdio>
 
-extern "C" int live_tick(int frame)
+extern "C" HOT_RELOAD_EXPORT int live_tick(int frame)
 {
 	int multiplier = 2; // <- try changing this
 	int value = frame * multiplier;

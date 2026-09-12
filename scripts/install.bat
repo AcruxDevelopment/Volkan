@@ -18,7 +18,7 @@ cd /d "%~dp0.."
 if "%BUILD_DIR%"=="" set "BUILD_DIR=out\build"
 set "BUILD_TYPE=%~1"
 if "%BUILD_TYPE%"=="" set "BUILD_TYPE=Release"
-set "COMPONENT=demo"
+set "COMPONENT=hotreload"
 
 if not exist "%BUILD_DIR%" (
     echo error: "%BUILD_DIR%" not found. Run scripts\build.bat first.

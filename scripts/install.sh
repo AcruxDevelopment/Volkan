@@ -21,7 +21,7 @@ cd "$SCRIPT_DIR/.."
 
 BUILD_DIR="${BUILD_DIR:-out/build}"
 BUILD_TYPE="${1:-Release}"
-COMPONENT="demo"  # must match PROJECT_CODE_NAME in CMakeLists.txt
+COMPONENT="hotreload"  # must match PROJECT_CODE_NAME in CMakeLists.txt
 
 if [ ! -d "$BUILD_DIR" ]; then
     echo "error: '${BUILD_DIR}' not found. Run scripts/build.sh first." >&2

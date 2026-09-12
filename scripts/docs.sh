@@ -11,7 +11,7 @@
 #
 # Usage (from the project root):
 #   scripts/docs.sh              # every module
-#   scripts/docs.sh core_lib      # just one module's docs (docs_<target>)
+#   scripts/docs.sh hotreload_lib      # just one module's docs (docs_<target>)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -195,6 +195,57 @@ holds on Linux/macOS as tested here; it's worth double-checking on
 Windows if you link the CRT in an unusual way (e.g. mismatched
 static/dynamic CRT between the host and a plugin).
 
+## Why do std::string/std::vector symbols show up as PATCHED?
+
+Because they're real, addressable functions too, and classification
+doesn't -- can't -- know that a symbol "belongs to the standard library"
+as opposed to your own code. Confirmed directly: any plugin that uses
+`std::string`/`std::vector<T>` internally will show template
+instantiations like `std::vector<int>::_M_realloc_insert<...>` getting
+`HOT_RELOAD_SYMBOL_PATCHED` on every single reload, even one that
+changed nothing about how you use them -- because these are genuinely
+present, genuinely exported (with default visibility, by default, on
+every build tested here), and genuinely at a new address every time,
+since that's just true of everything in a freshly-loaded `.so`/`.dll`.
+
+**This is safe.** It's the exact same template instantiation in both
+builds -- same mangled name, same object layout, same ABI, and (using
+the same compiler and standard library on both sides, which you already
+need for mangled names to match at all -- see above) functionally
+equivalent code. Redirecting old calls to the new copy changes where the
+logic runs, never what it does.
+
+**It is not fixable by hiding symbols, and that's not just an
+unimplemented feature.** The obvious fix -- compile with
+`-fvisibility=hidden -fvisibility-inlines-hidden` -- does not work here,
+confirmed directly: `libstdc++`'s headers mark these template
+instantiations `default` visibility explicitly, in the header itself,
+specifically so multiple `.so`s can share type identity for RTTI and
+exception handling across shared-library boundaries. That annotation
+wins over your translation unit's own `-fvisibility=hidden` default,
+on purpose, and this library has no way to override it that wouldn't
+also risk breaking that cross-DSO guarantee for anyone who needs it.
+
+**A blanket "don't patch weak-linkage symbols" rule would be the wrong
+fix even if it worked**, which is why this library doesn't do that
+either: weak/COMDAT linkage is also exactly how a *hot-reloadable
+template of your own* would be classified. A rule that reliably filters
+out the standard library's internals would just as reliably filter out
+your own reloadable generic code.
+
+**What actually helps, if the log's noise level bothers you, is
+narrowing your plugin's export surface** with
+`hot_reload_restrict_exports()` (`cmake/HotReload.cmake`) and
+`HOT_RELOAD_EXPORT` (`hot_reload.h`) -- see "Using it in your own
+module" below. This doesn't remove the standard-library instantiations
+specifically (see above), but it does stop your own internal helpers,
+and (on GCC/Clang, if a target statically links its C++ runtime)
+incidental runtime-library internals, from becoming part of the diff at
+all -- both real cases observed while building this library's own
+examples. Beyond that, filtering the event log for *display* is a
+one-line addition in your own `on_symbol_event` callback -- e.g. skip
+anything whose `hot_reload_demangle()`'d name starts with `"std::"`.
+
 ## Scope: what's actually implemented and checked
 
 | | x86 | x86-64 | ARM64 | ARM32 |
@@ -364,9 +415,11 @@ fix this in any shared library, hot-reloaded or not.
 
 ## Using it in your own module
 
-1. Every function you want reloadable needs C linkage --
-   `extern "C"` -- for the same reason any `dlopen()`'d interface
-   needs it (see `hot_reload.h`'s file comment and style guide §11).
+1. `extern "C"` isn't required -- a real C++ mangled name works too
+   (see "Hot reloading C++ symbols" above) -- but it's still the
+   simplest choice for anything you want to look up by a plain,
+   human-typed name, and the only way to get a name stable across
+   compilers.
 2. Build it as its own `SHARED` library target and call
    `hot_reload_enable_patchable_functions(<target>)`
    (`cmake/HotReload.cmake`) on it, so every exported function has
@@ -374,16 +427,30 @@ fix this in any shared library, hot-reloaded or not.
    any function whose compiled body happens to be large enough on its
    own -- functions that aren't get skipped
    (`HOT_RELOAD_SYMBOL_SKIPPED_TOO_SMALL`), not corrupted.
-3. On Windows, also set `WINDOWS_EXPORT_ALL_SYMBOLS ON` on that
-   target, or add explicit `__declspec(dllexport)` to each function
-   yourself -- MSVC exports nothing by default. (Prefer explicit
-   per-symbol export in a real project, even though the demo uses the
-   blanket property to match this repo's existing `add_lib_module()`
-   convention: exporting everything means anything your build happens
-   to pull in -- including, as this project's own Windows testing
-   turned up, incidental runtime-library internals -- becomes part of
-   your reloadable surface too, redirected right along with the
-   functions you actually meant.)
+3. Decide how much of the target's export surface you want to be
+   deliberate about:
+   - **Simplest**: do nothing else. On GCC/Clang/MinGW this exports
+     every symbol with external linkage by default; on MSVC, also set
+     `WINDOWS_EXPORT_ALL_SYMBOLS ON` to match (MSVC exports nothing by
+     default otherwise). `source/examples/HotReloadDemo`'s plugins use
+     this style.
+   - **Recommended for a real project**: call
+     `hot_reload_restrict_exports(<target>)` (`cmake/HotReload.cmake`)
+     instead, and mark each intended entry point with `HOT_RELOAD_EXPORT`
+     (`hot_reload.h`) -- `extern "C" HOT_RELOAD_EXPORT int my_function(...)`
+     for a plain-name free function (that exact order -- GCC/Clang want
+     the attribute after `extern "C"`), or just `HOT_RELOAD_EXPORT` alone
+     on a C++ class/method you want exported with its real mangled name
+     intact. This keeps anything you didn't explicitly mark -- your own
+     internal helpers, or (on GCC/Clang, if the target statically links
+     its C++ runtime) incidental runtime-library internals -- out of the
+     diff entirely. It does *not* narrow out `std::string`/`std::vector`
+     template instantiations specifically; see "Why do std::string/
+     std::vector symbols show up as PATCHED?" above for why not, and why
+     that's fine either way. `source/examples/HotReloadLiveDemo`'s
+     plugin uses this style -- compare the two examples' exported symbol
+     lists (`nm -D --defined-only <path> | c++filt`) to see the
+     difference directly.
 4. Have your host `hot_reload_load()` it once at startup and
    `hot_reload_reload()` it after every rebuild, from a point where
    nothing else is calling into it (see "What this cannot detect"
