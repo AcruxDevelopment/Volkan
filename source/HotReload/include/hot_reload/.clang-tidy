@@ -1,0 +1,45 @@
+---
+# source/HotReload/include/hot_reload/.clang-tidy
+#
+# hot_reload.h itself is Part II (C API) style -- snake_case, per style
+# guide §13. Copied from the repo-root c-api/.clang-tidy template (see
+# that file's own header comment for how clang-tidy's directory-scoped
+# config resolution makes this work); see also
+# source/HotReload/src/c-api/.clang-tidy for this same override applied
+# to the C API's .cpp implementation, one directory tree over.
+InheritParentConfig: true
+
+Checks: >
+  readability-identifier-naming,
+  bugprone-exception-escape
+
+CheckOptions:
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalVariablePrefix
+    value: g_
+  - key: readability-identifier-naming.StaticVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticVariablePrefix
+    value: s_
