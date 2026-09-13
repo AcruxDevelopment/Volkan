@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://github.com/AcruxDevelopment/Magma/blob/main/magma-icon.png" alt="Logo" width="auto" height="80">
   
-  # Magma
+  # Volkan
 
   **C++ Hot-Reload library**
 </div>
