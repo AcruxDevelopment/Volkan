@@ -1,4 +1,12 @@
-# Hot Reload
+<div align="center">
+  <img src="https://github.com/AcruxDevelopment/Magma/blob/main/magma-icon.png" alt="Logo" width="auto" height="80">
+  
+  # Magma
+
+  **C++ Hot-Reload library**
+</div>
+
+<br>
 
 A cross-platform, cross-compiler C/C++ library that patches a running
 process's own code in place, so a new build of a function takes effect
