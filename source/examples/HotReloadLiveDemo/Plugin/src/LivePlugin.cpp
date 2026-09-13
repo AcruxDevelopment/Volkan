@@ -42,11 +42,13 @@
 #include "hot_reload/hot_reload.h"
 
 #include <cstdio>
+#include <iostream>
 
 extern "C" HOT_RELOAD_EXPORT int live_tick(int frame)
 {
 	int multiplier = 2; // <- try changing this
 	int value = frame * multiplier;
-	std::printf("  live_tick(%d) -> %d\n", frame, value);
+	std::printf("  live_tick (%d) -> %d\n", frame, value);
+	std::cout.flush();
 	return value;
 }

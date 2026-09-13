@@ -3,6 +3,13 @@
 #include <cstdint>
 
 #if defined(_WIN32)
+	// NOMINMAX: prevents windows.h from defining min/max macros that
+	// would otherwise clash with std::min/std::max and anything else
+	// named min/max in this translation unit -- found via an actual
+	// Windows build/run of this library, not just documentation.
+	#ifndef NOMINMAX
+		#define NOMINMAX
+	#endif
 	#include <windows.h>
 #else
 	#include <sys/mman.h>

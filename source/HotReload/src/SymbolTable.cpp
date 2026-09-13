@@ -35,6 +35,16 @@ namespace hot_reload::detail
 	// headers just gets added directly to loadedBase.
 	// ---------------------------------------------------------------
 
+	// NOMINMAX matters concretely in this exact file, not just as a
+	// defensive habit: without it, windows.h's own min/max macros
+	// substitute into the std::max/std::min calls a few lines below
+	// (the preprocessor sees the bare token max after std::, not the
+	// qualified name, and expands it regardless) and the file fails to
+	// compile on MSVC. Found via an actual Windows build/run of this
+	// library, not just documentation.
+	#ifndef NOMINMAX
+		#define NOMINMAX
+	#endif
 	#include <windows.h>
 
 	namespace

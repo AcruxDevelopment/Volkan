@@ -3,6 +3,12 @@
 #include <string>
 
 #if defined(_WIN32)
+	// NOMINMAX: see MemoryProtection.cpp's identical comment -- same
+	// windows.h, same reason, needed in every translation unit that
+	// includes it, not just once for the library as a whole.
+	#ifndef NOMINMAX
+		#define NOMINMAX
+	#endif
 	#include <windows.h>
 #else
 	#include <dlfcn.h>

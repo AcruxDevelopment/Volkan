@@ -29,8 +29,27 @@
 	// beyond just this function.
 	#include <cxxabi.h>
 #elif defined(_MSC_VER)
-	#include <dbghelp.h>
+	// windows.h must come first: dbghelp.h uses types (HANDLE, DWORD,
+	// BOOL, ...) it assumes are already defined rather than including
+	// their defining headers itself -- reversing this order fails to
+	// compile. NOMINMAX prevents windows.h from defining min/max
+	// macros that would otherwise clash with std::min/std::max and
+	// anything else named min/max in this translation unit. Both
+	// fixes below came from an actual Windows build/run of this
+	// library, not just documentation -- see README.md's toolchain
+	// verification notes.
+	#ifndef NOMINMAX
+		#define NOMINMAX
+	#endif
 	#include <windows.h>
+	#include <dbghelp.h>
+	// Belt-and-suspenders for anyone building this file outside this
+	// project's own CMake (source/HotReload/CMakeLists.txt links
+	// dbghelp explicitly for every MSVC-family build, which is the
+	// primary fix and the one actually required -- confirmed directly
+	// that omitting it leaves UnDecorateSymbolName undefined at link
+	// time regardless of this pragma).
+	#pragma comment(lib, "dbghelp.lib")
 #endif
 
 extern "C"
@@ -61,10 +80,12 @@ extern "C"
 			// DbgHelp) -- but DbgHelp as a whole is documented as not
 			// thread-safe, so serialize calls to this function
 			// yourself if you call it from more than one thread.
-			// Written against Microsoft's documented behavior; unlike
-			// most of this library, this specific function was not
-			// exercised on real Windows -- see README.md's toolchain
-			// verification notes.
+			// Exercised on a real Windows build (see README.md's
+			// toolchain verification notes) -- getting the
+			// windows.h/dbghelp.h include order and NOMINMAX right
+			// (see the #include block above) and linking dbghelp
+			// explicitly (source/HotReload/CMakeLists.txt) were both
+			// needed to get here.
 			char buffer[2048];
 			if (UnDecorateSymbolName(name, buffer, sizeof(buffer), UNDNAME_COMPLETE) != 0)
 			{

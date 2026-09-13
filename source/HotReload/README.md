@@ -283,17 +283,32 @@ export-table reader in `SymbolTable.cpp`.
   `_ZN9CppWidget4tickEi` lookup string was derived from a native GCC
   build but also worked unmodified against this MinGW/Wine build and
   the separate native Clang build).
-- **MSVC itself was not run anywhere in this process** -- there is no
-  Windows machine or MSVC install available in the environment this
-  was built in. The MSVC-specific code (`/hotpatch`,
-  `IMAGE_EXPORT_DIRECTORY` parsing, `VirtualProtect`,
-  `FlushInstructionCache`) is written directly against Microsoft's
-  documented structures and behavior, and the equivalent PE-reading
-  code was compiled clean against real `<windows.h>` headers via
-  MinGW, but treat the MSVC path as unverified until you've built it
-  on an actual Windows box. If it doesn't work, `SymbolTable.cpp`'s
-  PE branch and `cmake/HotReload.cmake`'s `/hotpatch` branch are the
-  two places to look first.
+- **MSVC was never run directly in the environment that built this
+  library** -- there is no Windows machine or MSVC install available
+  there. It has, since, been built and live-tested on real MSVC by
+  someone using this library, surfacing four real fixes now folded
+  in: `windows.h` must be included before `dbghelp.h` (the reverse
+  order fails to compile -- `dbghelp.h` assumes types like `HANDLE`
+  are already defined rather than including their own headers),
+  `NOMINMAX` needs defining before `windows.h` in every file that
+  includes it (`SymbolTable.cpp` concretely needs this -- without it,
+  windows.h's own `min`/`max` macros substitute into that file's
+  `std::max`/`std::min` calls and it fails to compile), MSVC needs
+  `dbghelp.lib` linked explicitly for `UnDecorateSymbolName`
+  (`source/HotReload/CMakeLists.txt` now does this whenever
+  `MSVC` is true, which also covers `clang-cl`), and
+  `source/examples/HotReloadLiveDemo`'s reload-retry logic needed
+  widening (see that example's own file for why). The MSVC-specific
+  code (`/hotpatch`, `IMAGE_EXPORT_DIRECTORY` parsing,
+  `VirtualProtect`, `FlushInstructionCache`) was written directly
+  against Microsoft's documented structures and behavior before any
+  of that feedback existed, and the equivalent PE-reading code was
+  separately compiled clean against real `<windows.h>` headers via
+  MinGW -- between the two, treat it as real-world-checked now, not
+  merely reasoned through, though obviously with less first-hand
+  confidence than everything that was directly, repeatedly run in
+  this project's own development loop (native GCC/Clang, ARM64 under
+  QEMU, MinGW under Wine).
 - **32-bit ARM was not implemented at all**, deliberately: it's the
   one architecture in this list where getting it wrong is easy and
   getting it verified is hard. Its instructions are either 4 bytes

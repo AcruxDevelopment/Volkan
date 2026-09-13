@@ -12,3 +12,16 @@ if(NOT WIN32)
 	# (nonexistent, for a static lib) link step.
 	target_link_libraries(hotreload_lib PUBLIC ${CMAKE_DL_LIBS})
 endif()
+
+if(MSVC)
+	# UnDecorateSymbolName (Demangle.cpp) lives in dbghelp.lib, which --
+	# unlike kernel32/user32 -- MSVC does not link by default. Without
+	# this, the final link fails with an undefined symbol for it;
+	# found via an actual Windows build of this library, not just
+	# documentation. PUBLIC for the same reason as CMAKE_DL_LIBS above.
+	# Guarded on MSVC (true for both real cl.exe and clang-cl, and
+	# false for MinGW) rather than WIN32, since MinGW's build of
+	# Demangle.cpp takes the __GNUC__/__cxa_demangle branch instead and
+	# never needs dbghelp at all.
+	target_link_libraries(hotreload_lib PUBLIC dbghelp)
+endif()

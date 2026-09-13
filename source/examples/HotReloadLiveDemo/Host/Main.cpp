@@ -147,25 +147,51 @@ int main(int argc, char** argv)
 		auto currentWriteTime = std::filesystem::last_write_time(pluginPath, currentTimeStatus);
 		if (!currentTimeStatus && currentWriteTime != lastWriteTime)
 		{
-			// A short settle delay for a linker that might still be
-			// mid-write on a slower filesystem -- not load-bearing for
-			// correctness either way: a reload attempted too early
-			// just fails cleanly (hot_reload_reload() never disturbs
-			// the running version on failure) and gets retried next
-			// iteration, since lastWriteTime below is only updated on
-			// success.
-			std::this_thread::sleep_for(std::chrono::milliseconds(150));
-
 			std::printf("\n-- change detected in %s, reloading --\n", pluginPath.c_str());
-			HotReloadStatus status = hot_reload_reload(ctx, "live", pluginPath.c_str());
+
+			// A few quick retries, not just one settle delay: on
+			// Windows specifically, a rebuilt DLL can report its new
+			// write time a moment before it's actually fully readable
+			// -- observed directly (live-tested by someone building
+			// this feature): the file had genuinely finished building
+			// and hot-reloaded correctly a moment later, but the
+			// FIRST attempt, right after the write-time change was
+			// noticed, still failed. Retrying a handful of times
+			// before reporting failure absorbs that gap; a single
+			// fixed delay guessed from Linux's own timing was not
+			// enough. Not load-bearing for correctness either way --
+			// a reload attempted too early just fails cleanly
+			// (hot_reload_reload() never disturbs the running version
+			// on failure) -- this only changes whether a purely
+			// transient timing gap gets reported to you as a scary
+			// but spurious failure.
+			constexpr int maxAttempts = 5;
+			HotReloadStatus status = HOT_RELOAD_ERROR_LOAD_FAILED;
+			for (int attempt = 1; attempt <= maxAttempts; ++attempt)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(150 * attempt));
+				status = hot_reload_reload(ctx, "live", pluginPath.c_str());
+				if (status == HOT_RELOAD_OK)
+				{
+					break;
+				}
+			}
+
 			if (status == HOT_RELOAD_OK)
 			{
 				lastWriteTime = currentWriteTime;
 			}
 			else
 			{
-				std::printf("-- reload failed: %s -- still running the previous version; fix and save again --\n",
-					hot_reload_last_error(ctx));
+				std::printf(
+					"-- reload failed after %d attempts: %s -- still running the previous version; fix and "
+					"save again --\n",
+					maxAttempts, hot_reload_last_error(ctx));
+				// lastWriteTime deliberately NOT updated here: the
+				// next iteration of this loop sees the same "changed"
+				// timestamp and starts a fresh round of retries, in
+				// case the file becomes available even later than
+				// this round waited for.
 			}
 			std::printf("\n");
 		}
