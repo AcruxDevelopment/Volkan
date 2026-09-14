@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/AcruxDevelopment/Magma/blob/main/magma-icon.png" alt="Logo" width="auto" height="80">
+  <img src="https://github.com/AcruxDevelopment/Volkan/blob/main/res/icon.png" alt="Logo" width="auto" height="80">
   
   # Volkan
 
