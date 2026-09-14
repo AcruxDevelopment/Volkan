@@ -4,6 +4,7 @@
 #include "MemoryProtection.hpp"
 
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <unordered_set>
 
@@ -25,6 +26,56 @@ namespace hot_reload
 			}
 			out << in.rdbuf();
 			return static_cast<bool>(out);
+		}
+
+		// Best-effort: deletes any staging copy left over from a
+		// PREVIOUS run of this same host/module -- see
+		// stagePathForLoad()'s own comment for why those copies exist
+		// at all. On POSIX this normally finds nothing (an active
+		// run's own copies are already gone by the time it makes its
+		// next one -- see the std::remove() calls after each
+		// ModuleHandle::load() below). On Windows, a copy backing a
+		// still-loaded module cannot be deleted for as long as that
+		// module stays mapped -- which, by this library's own design,
+		// is for the rest of the CURRENT process's lifetime (see
+		// HotReloadContext.hpp's LoadedModule comment) -- so within a
+		// single long-running session some accumulation is expected
+		// and unavoidable; this specifically cleans up the PREVIOUS
+		// session's leftovers once that process has exited and
+		// released whatever lock Windows held. Called once, here, at
+		// the first hot_reload_load() for a given name -- not on every
+		// reload() -- since a copy from earlier in the SAME session
+		// would still be locked for the same reason and retrying
+		// wouldn't change that.
+		void cleanupOrphanedStagingFiles(const std::string& sourcePath, const std::string& moduleName)
+		{
+			namespace fs = std::filesystem;
+
+			fs::path source(sourcePath);
+			fs::path dir = source.has_parent_path() ? source.parent_path() : fs::path(".");
+			std::string prefix = source.filename().string() + ".hotreload." + moduleName + ".";
+
+			std::error_code dirError;
+			fs::directory_iterator entries(dir, dirError);
+			if (dirError)
+			{
+				return;
+			}
+
+			for (const fs::directory_entry& entry : entries)
+			{
+				std::error_code fileTypeError;
+				if (!entry.is_regular_file(fileTypeError) || fileTypeError)
+				{
+					continue;
+				}
+				const std::string filename = entry.path().filename().string();
+				if (filename.compare(0, prefix.size(), prefix) == 0)
+				{
+					std::error_code removeError;
+					fs::remove(entry.path(), removeError); // best-effort; a failure here just means try again next launch
+				}
+			}
 		}
 	}
 
@@ -88,6 +139,8 @@ namespace hot_reload
 			// whatever was already patched into the first one.
 			return HOT_RELOAD_ERROR_INVALID_ARGUMENT;
 		}
+
+		cleanupOrphanedStagingFiles(path, moduleName);
 
 		LoadedModule module;
 		std::string staged = stagePathForLoad(module, moduleName, path);

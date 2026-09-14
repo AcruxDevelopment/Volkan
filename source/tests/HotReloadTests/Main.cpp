@@ -12,6 +12,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <string>
 
@@ -181,6 +183,39 @@ int main()
 	CHECK(fixtureError != nullptr);
 	CHECK(fixtureError != nullptr && std::strlen(fixtureError) > 0);
 	hot_reload_context_destroy(fixtureCtx);
+
+	// --- orphaned staging-file cleanup: a real, reported case. On
+	// Windows, a staged copy backing a still-loaded module cannot be
+	// deleted for as long as that module stays mapped (the rest of
+	// the process's lifetime, by this library's own design), so a
+	// long-running session accumulates one such file per reload --
+	// expected and unavoidable, but hot_reload_load() should still
+	// sweep up whatever a PREVIOUS run of the same host left behind.
+	// Simulated here (rather than actually reproducing the Windows
+	// lock) by dropping a few files matching the staging pattern next
+	// to a real fixture before loading it, then checking they're gone
+	// afterward -- this exercises the real cleanup code path
+	// regardless of platform, even though the scenario it protects
+	// against is Windows-specific.
+	{
+		namespace fs = std::filesystem;
+		std::string orphanedBase = std::string(PLUGIN_V1_PATH) + ".hotreload.cleanup-test.";
+		for (int i = 1; i <= 3; ++i)
+		{
+			std::ofstream orphan(orphanedBase + std::to_string(i));
+			orphan << "leftover from a previous run";
+		}
+
+		HotReloadContext* cleanupCtx = hot_reload_context_create(nullptr);
+		CHECK(cleanupCtx != nullptr);
+		CHECK(hot_reload_load(cleanupCtx, "cleanup-test", PLUGIN_V1_PATH) == HOT_RELOAD_OK);
+
+		for (int i = 1; i <= 3; ++i)
+		{
+			CHECK(!fs::exists(orphanedBase + std::to_string(i)));
+		}
+		hot_reload_context_destroy(cleanupCtx);
+	}
 
 	if (g_failures == 0)
 	{

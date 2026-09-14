@@ -95,6 +95,10 @@ int main(int argc, char** argv)
 	std::printf("            (or run watch.sh, in this example's own directory, in another\n");
 	std::printf("             terminal to rebuild automatically every time you save)\n");
 	std::printf(" Stop:      Ctrl+C\n");
+	std::printf(" Note:      rebuild the PLUGIN target above, not \"Rebuild Solution\"/a full\n");
+	std::printf("            clean -- that also tries to delete this Host's own .exe, which\n");
+	std::printf("            Windows refuses to do while it's running (see this example's\n");
+	std::printf("            own README for why that's expected, not a bug)\n");
 	std::printf("================================================================\n\n");
 
 	std::signal(SIGINT, &handleSigint);

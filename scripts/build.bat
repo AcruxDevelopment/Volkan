@@ -7,8 +7,7 @@ REM
 REM   BUILD_TYPE  Debug^|Release^|RelWithDebInfo^|MinSizeRel (default: Release)
 REM
 REM Anything after BUILD_TYPE is passed straight through to cmake's
-REM configure step (up to 8 extra arguments -- %2 through %9, batch's own
-REM positional-parameter limit), e.g.:
+REM configure step, e.g.:
 REM   scripts\build.bat Debug -DBUILD_EXAMPLES=ON -DBUILD_TESTS=ON
 REM CMake caches -D options across reconfigures, so passing them once and
 REM then calling scripts\build.bat plain afterward for incremental builds
@@ -20,10 +19,27 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0.."
 
 if "%BUILD_DIR%"=="" set "BUILD_DIR=out\build"
-set "BUILD_TYPE=%~1"
-if "%BUILD_TYPE%"=="" set "BUILD_TYPE=Release"
 if "%TOOLCACHE_DIR%"=="" set "TOOLCACHE_DIR=.cache\tools"
-set "EXTRA_CMAKE_ARGS=%2 %3 %4 %5 %6 %7 %8 %9"
+
+REM Deliberately NOT %1/%2/... for this: cmd.exe's own parameter
+REM parser treats = (along with , and ;) as an argument separator, so
+REM "-DBUILD_EXAMPLES=ON" typed as one argument arrives as %2=
+REM "-DBUILD_EXAMPLES" and %3="ON" -- two arguments, with the = gone --
+REM before this script ever sees it, corrupting any -D value passed
+REM this way and silently breaking the configure step below. %* does
+REM not go through that same parser and reflects the command line
+REM as typed, and FOR /F's own tokenizer only splits on space/tab, so
+REM routing %* through "tokens=1,*" correctly separates just the
+REM first word from everything after it, = signs and all -- verified
+REM directly (via Wine's cmd.exe) against exactly the failure the
+REM old %2 %3 %4... version had, not just reasoned through.
+set "BUILD_TYPE=Release"
+set "EXTRA_CMAKE_ARGS="
+for /f "tokens=1,*" %%A in ("%*") do (
+    set "BUILD_TYPE=%%A"
+    set "EXTRA_CMAKE_ARGS=%%B"
+)
+if "%BUILD_TYPE%"=="" set "BUILD_TYPE=Release"
 
 where cmake >nul 2>nul
 if errorlevel 1 (

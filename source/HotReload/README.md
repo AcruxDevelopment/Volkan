@@ -475,4 +475,16 @@ fix this in any shared library, hot-reloaded or not.
    copy internally specifically so your build system's exact
    write pattern can't cause a stale reload (a known gotcha for this
    style of tool; see `HotReloadContext.cpp`'s
-   `stagePathForLoad()`).
+   `stagePathForLoad()`). On Windows, each staged copy backing a
+   still-loaded module can't be deleted for as long as that module
+   stays mapped -- the rest of the process's lifetime, by design --
+   so a long-running session accumulates one such file per reload;
+   `hot_reload_load()` sweeps up whatever a *previous* run left
+   behind, so this doesn't grow without bound across sessions, only
+   (unavoidably) within one very long one. See
+   `source/examples/HotReloadLiveDemo/README.md`'s own section on
+   this for the full story, including why "Rebuild Solution" (or any
+   other full clean) separately fails outright while a host built
+   from this library is running, for an unrelated reason -- it also
+   tries to delete the *host's own* executable, which Windows refuses
+   while it's running, and which has no staging workaround at all.
